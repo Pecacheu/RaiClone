@@ -10,6 +10,8 @@ mnt="MOUNTPOINT_HERE"
 pwd="PASSWORD_HERE"
 ```
 
+Before running clone and restore scripts, run `init.sh` first.
+
 More info coming soon.
 
 ## TODO
