@@ -20,6 +20,6 @@ cd scripts
 sudo bash ./setup.sh
 cd ..
 clear
-echo Welcome to RaiClone v2.0.2 by Pecacheu. Use \'./clone.sh\' or \'./restore.sh\'
+echo Welcome to RaiClone v2.0.3 by Pecacheu. Use \'./clone.sh\' or \'./restore.sh\'
 set +e
 bash

@@ -13,7 +13,8 @@ apt -y install wimtools sshfs ssh
 fi
 
 srv=$(<srv); mnt=$(<mnt); pwd=$(<srv-pwd)
-addr=$(echo $srv | grep -Eo '[^@]+' | tail -1)
+addr=$(echo $srv | gawk 'match($0, /^([A-Za-z0-9]+)@([A-Za-z0-9.]+)(:([0-9]+))?/, a) {print (a[4]?"-p "a[4]" ":"")a[2]}')
+srv=$(echo $srv | gawk 'match($0, /^([A-Za-z0-9]+)@([A-Za-z0-9.]+)(:([0-9]+))?/, a) {print (a[4]?"-p "a[4]" ":"")a[1]"@"a[2]}')
 
 echo ---- Connecting to $addr...
 pkill sshfs -KILL || true
