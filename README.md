@@ -16,4 +16,3 @@ More info coming soon.
 
 - Interactive selector menu (using dialog package?) to choose the disk to image, more user friendly.
 - Detect if running on a text-only terminal and DON'T kill & relaunch the terminal process to get fullscreen.
-- Transition to using DISM instead of PartClone/Clonezilla?

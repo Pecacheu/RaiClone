@@ -1,4 +1,5 @@
-echo -e "\n---- Repairing & Mounting NTFS..."
+CY='\x1b[33m'; CR='\x1b[0m'
+echo -e "$CY\n---- Repairing & Mounting NTFS...$CR"
 umount $1
 ntfsfix -d $1 2>/dev/null
 set -e

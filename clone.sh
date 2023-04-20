@@ -1,6 +1,8 @@
-fn="Carbon-$(date +%b-%Y)"
+fn="$1-$(date +%b-%Y)"
 file="/mnt/share/$fn"
-dev=/dev/nvme0n1p1
 
+if [[ $# != 2 ]]; then
+	echo "Usage: $0 <type> <dev>"; exit 1
+fi
 cd scripts
-sudo ./clone.sh $dev $file
+sudo ./clone.sh $2 $file max

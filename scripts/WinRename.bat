@@ -57,7 +57,7 @@
  ::::::::::::::::::::::::::::
  ::START
  ::::::::::::::::::::::::::::
- echo Sucessfully imaged from #1#
+ echo Sucessfully restored from #1#
  echo Renaming this PC to #2#...
  wmic computersystem where name="%computername%" call rename name="#2#"
  echo Please reboot to apply changes.
