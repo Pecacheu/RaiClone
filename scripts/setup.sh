@@ -9,7 +9,7 @@ set -e
 if [ $n -ne 0 ]; then
 sed -i 's/^\(deb cdrom:.*\)$/# \1/' /etc/apt/sources.list
 apt-add-repository -y universe
-apt -y install wimtools sshfs ssh
+apt -y install wimtools sshfs ssh gawk
 fi
 
 srv=$(<srv); mnt=$(<mnt); pwd=$(<srv-pwd)
