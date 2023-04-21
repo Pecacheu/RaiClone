@@ -28,7 +28,7 @@ size=$(echo $info | sed 's/.*SIZE="\([^"]*\).*/\1/')
 draw=$(echo $info | sed 's/^NAME="\([^"]*\).*/\1/')
 dev=$(dirname $1)/$draw
 
-[ $label ] && n="Name: $label, " || n=""
+[ "$label" ] && n="Name: $label, " || n=""
 echo -e "${CM}Create image of $dev (${n}Type: $type, Size: $size) at $img?\n(y/n)$CR"
 read -p "> " yn
 case $yn in

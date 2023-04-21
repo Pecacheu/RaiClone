@@ -7,32 +7,33 @@ CY='\x1b[33m'; CM='\x1b[36m'; CR='\x1b[0m'
 cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")/scripts"
 
 echo -e "${CY}Gathering Device Info...$CR"
-info=$(lsblk -Po name,label,pkname $2)
+info=$(lsblk -Po name,label,pkname,size $2)
 if [ $(echo "$info" | wc -l) -ne 1 ]; then
 	echo "Cannot restore to whole disk, use partition"; exit 5
 fi
 label=$(echo $info | sed 's/.*LABEL="\([^"]*\).*/\1/')
 blk=$(echo $info | sed 's/.*PKNAME="\([^"]*\).*/\1/')
 draw=$(echo $info | sed 's/^NAME="\([^"]*\).*/\1/')
-dev=$(dirname $1)/$draw
+dSize=$(echo $info | sed 's/.*SIZE="\([^"]*\).*/\1/')
+dev=$(dirname $2)/$draw
 if [ $blk ]; then
 	blk=/dev/$blk; did=$((`lsblk -P $blk | grep -on $draw | grep -oP '^\d+'`-1))
 else blk=$dev; did=1; fi
 
 echo -e "${CY}Gathering Image Info...$CR"
 set +e
-info=$(wiminfo "$1" -xml 2>&1)
-$? && echo $info && exit 3
+info=$(wiminfo "$1" -xml 2>&1 | tr -d '\0\200-\377')
+[ $? -ne 0 ] && echo $info && exit 3
 set -e
-size=$(echo "$info" | sed -n 's/.*<TOTALBYTES>\s*\(.*?\)<\/.*/\1/p' | awk '{print(int($0)/1e+9)" GB"}')
-name=$(echo "$info" | sed -n 's/.*<DISPLAYNAME>\s*\(.*?\)<\/.*/\1/p') ||\
-name=$(echo "$info" | sed -n 's/.*<NAME>\s*\(.*?\)<\/.*/\1/p')
-type=$(echo "$info" | sed -n 's/.*<PartType>\s*\(.*?\)<\/.*/\1/p')
+size=$(echo $info | sed -n 's/.*<TOTALBYTES>\s*\([^<]*\)<\/.*/\1/p' | awk '{print(int($0)/1e+9)" GB"}')
+name=$(echo $info | sed -n 's/.*<DISPLAYNAME>\s*\([^<]*\)<\/.*/\1/p') ||\
+name=$(echo $info | sed -n 's/.*<NAME>\s*\([^<]*\)<\/.*/\1/p')
+type=$(echo $info | sed -n 's/.*<PartType>\s*\([^<]*\)<\/.*/\1/p')
 [ ! $type ] && echo "Error: Invalid metadata" && exit 6
 
-[ $name ] && n="Name: $name, " || n=""
-[ $label ] && dn=" (Name: $label)" || dn=""
-echo "${CM}Restore image $1 (${n}Type: $type, Size: $size) to $dev$dn?$CR"
+[ "$name" ] && n="Name: $name, " || n=""
+[ "$label" ] && dn="Name: $label, " || dn=""
+echo -e "${CM}Restore image $1 (${n}Type: $type, Size: $size) to $dev (${dn}Size: $dSize)?$CR"
 read -p "> " yn
 case $yn in
 	yes );;
@@ -41,6 +42,7 @@ case $yn in
 esac
 
 for i in $blk??*; do umount $i || true; done
+systemctl disable --now systemd-oomd
 
 echo -e "$CY\n---- Restoring Partition Data...$CR"
 unix=""
@@ -51,27 +53,27 @@ if [[ $type = ntfs ]]; then
 	elif [[ $tbl == mbr ]]; then
 		sfdisk $blk --part-type $did 7
 	else echo "Error: Unknown part table $tbl"; exit 6; fi
-	mkfs.$type $dev
-	#TODO: Label NTFS filesystem
-	#echo -e "y\n" | ntfsresize -f $dev
+	mkntfs -QvL "$label" $dev
 elif [[ $type = ext* ]]; then
 	sfdisk $blk --part-type $did L
-	#TODO: Init new Linux filesystem
-	mkfs.$type $dev
-	[ $label ] && e2label $dev $label
-	#e2fsck -f $dev
-	#resize2fs $dev
+	mkfs.$type -E lazy_itable_init $dev
+	[ "$label" ] && e2label $dev "$label"
 	unix="--unix-data"
 else
 	echo "Error: Unknown type $type"; exit 7
 fi
 
+sleep 2
+echo -e "$CY\n---- Checking $type Disk...$CR"
+if [[ $type = ntfs ]]; then ntfsfix -d $dev
+elif [[ $type = ext* ]]; then e2fsck -f $dev; fi
+
 echo -e "$CY\n---- Restoring Image...$CR"
 if [[ $type = ntfs ]]; then
-	wimapply "$img" $dev
+	wimapply "$1" $dev
 else
 	mkdir -p /mnt/tmp-disk; mount $dev /mnt/tmp-disk
-	wimapply "$img" /mnt/tmp-disk $unix
+	wimapply "$1" /mnt/tmp-disk $unix
 fi
 
 # Windows & Linux Restore Scripts
@@ -88,4 +90,5 @@ fi
 echo -e "$CY\n---- Syncing & Ejecting...$CR"
 sync -f /mnt/tmp-disk; sleep 1
 umount /mnt/tmp-disk; rmdir /mnt/tmp-disk
+systemctl enable systemd-oomd
 echo Done!
