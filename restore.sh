@@ -50,7 +50,7 @@ if [[ $type = ntfs ]]; then
 	tbl=$(sfdisk $blk --list | sed -n 's/.*Disklabel type:\s*\([^\n+]\)/\1/p')
 	if [[ $tbl == gpt ]]; then
 		sfdisk $blk --part-type $did EBD0A0A2-B9E5-4433-87C0-68B6B72699C7
-	elif [[ $tbl == mbr ]]; then
+	elif [[ $tbl == dos ]]; then
 		sfdisk $blk --part-type $did 7
 	else echo "Error: Unknown part table $tbl"; exit 6; fi
 	mkntfs -QvL "$label" $dev
