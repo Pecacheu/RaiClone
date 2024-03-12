@@ -64,8 +64,7 @@ elif [[ $type = ext* ]]; then e2fsck -f $dev; fi
 sleep 2
 
 echo -e "$CY\n---- Imaging...$CR"
-wim="$($label||$draw) $zip --image-property PartType=$type"
-echo "CMD: wimcapture /mnt/tmp-disk '$img' $wim $unix" # TEMP
+wim="$([ -z "$label" ] && echo $draw || echo $label) $zip --image-property PartType=$type"
 if [[ $type = ntfs ]]; then
 	wimcapture $dev "$img" $wim
 else
